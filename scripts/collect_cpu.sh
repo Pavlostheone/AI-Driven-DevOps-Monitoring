@@ -1,11 +1,12 @@
 #!/bin/bash
 
-
+source "$(dirname "$0")/common.sh"
+source "$(dirname "$0")/config.env"
 # === Function === #
 
 # Function to check required commands
 check_dependencies() {
-    for cmd in top awk mailx; do
+    for cmd in awk; do
         if ! command -v "$cmd" &>/dev/null; then
             echo "$DATE - ERROR: Required command '$cmd' not found." | tee -a "$LOG_FILE"
             exit 1
@@ -18,7 +19,7 @@ check_dependencies() {
 get_cpu_usage(){
     #Extract CPU usage using top command
   local usage
-  usage=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
+  usage=$(wmic cpu get loadpercentage | awk 'NR==2 {print $1}')
 
 
 # Handle empty or invalid values
@@ -70,7 +71,7 @@ send_email_alert() {
 }
 
 log_message() {
-    echo "$DATE - $1" | tee -a "$LOG_FILE"
+    echo "$1" | tee -a "$LOG_FILE"
 }
 
 # === MAIN Logic === #
@@ -86,7 +87,7 @@ fi
 
 if (( CPU_INT > THRESHOLD_CPU)); then
     #CPU HIGH
-    if [[ ! -f "$STATE_FILE" ]], then
+    if [[ ! -f "$STATE_FILE" ]]; then
         log_message "ALERT: CPU usage ${CPU_INT}% > ${THRESHOLD_CPU}%. Sending alert..."
         send_email_alert "$CPU_INT"
         echo "ALERT_SENT" > "$STATE_FILE"
