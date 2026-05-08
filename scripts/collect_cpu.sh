@@ -22,9 +22,9 @@ get_cpu_usage(){
 
 
 # Handle empty or invalid values
-  if [[-z "$usage" || "$usage" == *"e+"*]], then 
+  if [[ -z "$usage" || "$usage" == *"e+"* ]]; then 
     echo "0"
-  Else
+  else
     echo "${usage%.*}" #strip decimals
   fi
 }
@@ -65,7 +65,7 @@ send_email_alert() {
     Regards, 
     Monitoring Script"
 
-    echo "$message" | mailx -s "$subject" "MAIL_TO"
+    echo "$message" | mailx -s "$subject" "$MAIL_TO"
     echo "$DATE - EMAIL: Recovery email sent to $MAIL_TO (CPU: ${cpu_value}%)" >> "$LOG_FILE"
 }
 
@@ -84,9 +84,9 @@ if [[ ! "$CPU_INT" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-if (( CPU_INT > THRESHOLD)); then
+if (( CPU_INT > THRESHOLD_CPU)); then
     #CPU HIGH
-    if [[ ! -f "$STATE_FILE"]], then
+    if [[ ! -f "$STATE_FILE" ]], then
         log_message "ALERT: CPU usage ${CPU_INT}% > ${THRESHOLD_CPU}%. Sending alert..."
         send_email_alert "$CPU_INT"
         echo "ALERT_SENT" > "$STATE_FILE"
@@ -95,7 +95,7 @@ if (( CPU_INT > THRESHOLD)); then
     fi
 else
     #CPU Normal
-    if [[ -f "$STATE_FILE"]]; then
+    if [[ -f "$STATE_FILE" ]]; then
         log_message "RECOVERY: CPU usage ${CPU_INT}% < ${THRESHOLD_CPU}%. Sending recovery email..."
         send_recovery_email "$CPU_INT"
         rm -f "$STATE_FILE"
