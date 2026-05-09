@@ -56,7 +56,7 @@ git push
 
 ```bash
 # Forward Prometheus to localhost
-kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-st-prometheus 9090:9090
+kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 9090:9090
 
 # Forward Grafana to localhost
 kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
