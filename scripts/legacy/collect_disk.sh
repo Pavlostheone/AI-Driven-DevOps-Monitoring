@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# LEGACY: Replaced by Prometheus which collects this metric natively.
 source "$(dirname "$0")/common.sh"
 source "$(dirname "$0")/config.env"
 
