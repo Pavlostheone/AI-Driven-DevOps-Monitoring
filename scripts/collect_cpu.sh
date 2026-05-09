@@ -2,6 +2,9 @@
 
 source "$(dirname "$0")/common.sh"
 source "$(dirname "$0")/config.env"
+
+DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
 # === Function === #
 
 # Function to check required commands
