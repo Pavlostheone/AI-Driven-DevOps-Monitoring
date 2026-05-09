@@ -1,0 +1,23 @@
+# Verify Kubernetes cluster is running
+kubectl get nodes
+
+# Verify Helm is installed
+helm version
+
+# Find Helm executable path
+where.exe helm
+
+# Add Prometheus community Helm repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+# Update Helm repos
+helm repo update
+
+# Deploy Prometheus + Grafana stack into monitoring namespace
+helm install monitoring prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+
+# Get Grafana admin password
+kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+# Forward Grafana to localhost
+kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
