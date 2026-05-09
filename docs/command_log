@@ -1,3 +1,10 @@
+# Command Log — AI-Driven DevOps Monitoring
+
+---
+
+## Week 1 — Day 1 | Kubernetes + Prometheus + Grafana Setup
+
+```bash
 # Verify Kubernetes cluster is running
 kubectl get nodes
 
@@ -21,3 +28,57 @@ kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.dat
 
 # Forward Grafana to localhost
 kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
+```
+
+**Result:** 3-node cluster running (1 control plane, 2 workers). Grafana accessible at http://localhost:3000
+
+---
+
+## Week 1 — Day 2 | Repo Cleanup + README
+
+```bash
+# Commit legacy scripts and updated README
+git add .
+git commit -m "refactor: move redundant metric scripts to legacy, Prometheus now handles collection"
+git push
+
+# Commit full README
+git add .
+git commit -m "docs: full README reflecting current Kubernetes stack and project structure"
+git push
+```
+
+**Result:** Legacy bash scripts moved to `scripts/legacy/`. README rewritten to reflect Kubernetes stack.
+
+---
+
+## Week 1 — Day 3 | Prometheus Queries + Data Exploration
+
+```bash
+# Forward Prometheus to localhost
+kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-st-prometheus 9090:9090
+
+# Forward Grafana to localhost
+kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
+
+# Commit Prometheus query reference
+git add .
+git commit -m "docs: add Prometheus query reference for CPU, memory and pod metrics"
+git push
+```
+
+**PromQL queries run:**
+```promql
+# CPU usage per node
+100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+# Memory usage per node
+(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+
+# Pod count per node
+count by (node) (kube_pod_info)
+```
+
+**Result:** Cluster producing live metrics. Nodes at ~2% CPU, ~54% memory. Queries saved to `docs/prometheus_queries.md`.
+
+---
