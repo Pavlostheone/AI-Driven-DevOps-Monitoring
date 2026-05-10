@@ -1,2 +1,2 @@
-echo "ml/NAB/" >> .gitignore
-echo "ml/NAB.zip" >> .gitignore
+ml/NAB/
+ml/NAB.zip
