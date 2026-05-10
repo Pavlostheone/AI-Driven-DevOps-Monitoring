@@ -13,4 +13,7 @@ echo "Grafana     → http://localhost:3000"
 
 echo ""
 echo "All forwards running. Press Ctrl+C to stop all."
+cd ~/DevOps-intelligence-Portfolio/01-AI-Driven-DevOps-Monitoring/backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+echo "Backend     → http://localhost:8000"
+cd ~/DevOps-intelligence-Portfolio/01-AI-Driven-DevOps-Monitoring
 wait
