@@ -133,3 +133,35 @@ git push
 **Result:** 35 rows inserted into `cluster_metrics` table in PostgreSQL. Full pipeline working: Prometheus → Python → CSV + PostgreSQL.
 
 ---
+
+## Week 2 — Day 1 | CronJob Automation + Docker Hub
+
+```bash
+# Check data in PostgreSQL
+kubectl exec -it postgres-postgresql-0 -n monitoring -- psql -U postgres
+SELECT COUNT(*) FROM cluster_metrics;
+SELECT * FROM cluster_metrics ORDER BY timestamp DESC LIMIT 5;
+\q
+
+# Build metric fetcher Docker image
+cd ml
+docker build -t metric-fetcher:latest .
+cd ..
+
+# Deploy CronJob into cluster
+kubectl apply -f docker/cronjob.yaml
+
+# Verify CronJob is running
+kubectl get cronjob -n monitoring
+
+# Check CronJob pods
+kubectl get pods -n monitoring | grep metric-fetcher
+
+# Tag and push image to Docker Hub
+docker tag metric-fetcher:latest yourusername/metric-fetcher:latest
+docker push yourusername/metric-fetcher:latest
+```
+
+**Result:** CronJob deployed, firing every 5 minutes. Image pushed to Docker Hub to fix ErrImageNeverPull error.
+
+---

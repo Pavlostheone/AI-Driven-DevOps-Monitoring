@@ -11,8 +11,8 @@ spec:
         spec:
           containers:
           - name: metric-fetcher
-            image: metric-fetcher:latest
-            imagePullPolicy: Never
+            image: pavlostheone/metric-fetcher:latest
+            imagePullPolicy: Always
             env:
             - name: PROMETHEUS_URL
               value: "http://monitoring-kube-prometheus-prometheus:9090"
