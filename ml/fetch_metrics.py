@@ -95,6 +95,9 @@ def main():
         .sort_values("timestamp") \
         .ffill()
 
+    df = df.dropna()
+    df = df[~df.isin([float('inf'), float('-inf'), float('nan')]).any(axis=1)]
+    
     print(f"Fetched {len(df)} rows.")
 
     print("Connecting to PostgreSQL...")
