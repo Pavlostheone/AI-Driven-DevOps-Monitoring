@@ -56,7 +56,7 @@ git push
 
 ```bash
 # Forward Prometheus to localhost
-kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 9090:9090
+kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-st-prometheus 9090:9090
 
 # Forward Grafana to localhost
 kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
@@ -80,5 +80,56 @@ count by (node) (kube_pod_info)
 ```
 
 **Result:** Cluster producing live metrics. Nodes at ~2% CPU, ~54% memory. Queries saved to `docs/prometheus_queries.md`.
+
+---
+
+## Week 1 — Day 4 | Python Metric Fetcher + CSV Output
+
+```bash
+# Install Python dependencies
+pip install requests pandas
+
+# Run metric fetcher (Prometheus port-forward must be running)
+python ml/fetch_metrics.py
+```
+
+**Result:** 121 rows of real cluster data saved to `ml/cluster_metrics.csv` with timestamp, cpu_percent, memory_percent, pod_count columns.
+
+---
+
+## Week 1 — Day 5 | PostgreSQL Deployment + Full Pipeline
+
+```bash
+# Add Bitnami Helm repo
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Deploy PostgreSQL into monitoring namespace
+helm install postgres bitnami/postgresql --namespace monitoring --set auth.postgresPassword=devops123
+
+# Verify PostgreSQL pod is running
+kubectl get pods -n monitoring
+
+# Install Python PostgreSQL driver
+pip install psycopg2-binary
+
+# Start all port-forwards with one command
+bash start.sh
+
+# Run updated metric fetcher (writes to both CSV and PostgreSQL)
+python ml/fetch_metrics.py
+
+# Commit everything
+git add .
+git commit -m "feat: PostgreSQL deployed, metrics pipeline writing to DB, startup script added"
+git push
+```
+
+**Port-forwards (via start.sh):**
+- Prometheus → http://localhost:9090
+- PostgreSQL → localhost:5432
+- Grafana → http://localhost:3000
+
+**Result:** 35 rows inserted into `cluster_metrics` table in PostgreSQL. Full pipeline working: Prometheus → Python → CSV + PostgreSQL.
 
 ---
