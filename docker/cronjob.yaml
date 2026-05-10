@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: metric-fetcher
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: metric-fetcher
+            image: metric-fetcher:latest
+            imagePullPolicy: Never
+            env:
+            - name: PROMETHEUS_URL
+              value: "http://monitoring-kube-prometheus-prometheus:9090"
+            - name: DB_HOST
+              value: "postgres-postgresql"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "postgres"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              value: "devops123"
+          restartPolicy: OnFailure
