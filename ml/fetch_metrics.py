@@ -1,16 +1,17 @@
 import requests
 import pandas as pd
 import psycopg2
+import os
 from datetime import datetime, timedelta
 
-PROMETHEUS_URL = "http://localhost:9090"
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "dbname": "postgres",
-    "user": "postgres",
-    "password": "devops123"
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": int(os.getenv("DB_PORT", 5432)),
+    "dbname": os.getenv("DB_NAME", "postgres"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "devops123")
 }
 
 def query_prometheus(query):
@@ -94,8 +95,7 @@ def main():
         .sort_values("timestamp") \
         .ffill()
 
-    df.to_csv("ml/cluster_metrics.csv", index=False)
-    print(f"Saved {len(df)} rows to ml/cluster_metrics.csv")
+    print(f"Fetched {len(df)} rows.")
 
     print("Connecting to PostgreSQL...")
     conn = psycopg2.connect(**DB_CONFIG)
