@@ -5,7 +5,7 @@ from collections import deque
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "..", "..", "..", "ml", "model.pkl")
+MODEL_PATH = os.path.join(BASE_DIR, "..", "..", "ml", "model.pkl")
 
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
