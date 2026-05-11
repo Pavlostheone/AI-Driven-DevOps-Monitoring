@@ -68,7 +68,7 @@ jobs:
       - name: Start backend
         run: |
           cd Backend
-          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          MODEL_PATH="../ml/model.pkl" uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
 
       - name: Prime rolling window
