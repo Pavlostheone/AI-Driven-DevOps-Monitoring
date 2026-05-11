@@ -1,12 +1,12 @@
 import pandas as pd
 import json
-import os
 
 # === Config === #
 DATA_FILE = "ml/NAB/NAB-master/data/realAWSCloudwatch/ec2_cpu_utilization_24ae8d.csv"
 LABELS_FILE = "ml/NAB/NAB-master/labels/combined_labels.json"
 DATASET_KEY = "realAWSCloudwatch/ec2_cpu_utilization_24ae8d.csv"
 OUTPUT_FILE = "ml/nab_labeled.csv"
+
 
 def main():
     # Load the metric data
@@ -37,6 +37,7 @@ def main():
     mask = (df["timestamp"] >= first - pd.Timedelta(minutes=15)) & \
            (df["timestamp"] <= first + pd.Timedelta(minutes=15))
     print(df[mask].to_string(index=False))
+
 
 if __name__ == "__main__":
     main()

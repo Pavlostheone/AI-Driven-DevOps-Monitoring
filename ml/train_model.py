@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from sklearn.ensemble import IsolationForest
 import pickle
 import os
@@ -12,7 +11,8 @@ df = df.sort_values("timestamp").reset_index(drop=True)
 # === Feature engineering ===
 # === Feature engineering ===
 df["rolling_mean"] = df["cpu_percent"].rolling(window=12, min_periods=1).mean()
-df["rolling_std"] = df["cpu_percent"].rolling(window=12, min_periods=1).std().fillna(0)
+df["rolling_std"] = df["cpu_percent"].rolling(
+    window=12, min_periods=1).std().fillna(0)
 df["diff"] = df["cpu_percent"].diff().fillna(0)
 df["rolling_max"] = df["cpu_percent"].rolling(window=12, min_periods=1).max()
 
@@ -20,7 +20,14 @@ df["rolling_max"] = df["cpu_percent"].rolling(window=12, min_periods=1).max()
 df["hour"] = df["timestamp"].dt.hour
 df["day_of_week"] = df["timestamp"].dt.dayofweek
 
-features = ["cpu_percent", "rolling_mean", "rolling_std", "diff", "rolling_max", "hour", "day_of_week"]
+features = [
+    "cpu_percent",
+    "rolling_mean",
+    "rolling_std",
+    "diff",
+    "rolling_max",
+    "hour",
+    "day_of_week"]
 X = df[features]
 
 # === Train model ===
@@ -40,7 +47,8 @@ df["prediction"] = model.predict(X)
 df["anomaly_predicted"] = (df["prediction"] == -1).astype(int)
 
 print("\nEvaluation against ground truth:")
-results = df[df["anomaly"] == 1][["timestamp", "cpu_percent", "anomaly", "anomaly_predicted"]]
+results = df[df["anomaly"] == 1][["timestamp",
+                                  "cpu_percent", "anomaly", "anomaly_predicted"]]
 print(results.to_string(index=False))
 
 caught = (df["anomaly_predicted"] & df["anomaly"]).sum()

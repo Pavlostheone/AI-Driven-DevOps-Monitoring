@@ -14,6 +14,7 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", "devops123")
 }
 
+
 def query_prometheus(query):
     response = requests.get(
         f"{PROMETHEUS_URL}/api/v1/query_range",
@@ -26,6 +27,7 @@ def query_prometheus(query):
     )
     return response.json().get("data", {}).get("result", [])
 
+
 def extract_average(results):
     data = {}
     for series in results:
@@ -34,6 +36,7 @@ def extract_average(results):
                 data[timestamp] = []
             data[timestamp].append(float(value))
     return {ts: sum(vals) / len(vals) for ts, vals in data.items()}
+
 
 def to_df(data, col_name):
     rows = [
@@ -44,6 +47,7 @@ def to_df(data, col_name):
         for ts, val in data.items()
     ]
     return pd.DataFrame(rows)
+
 
 def setup_db(conn):
     with conn.cursor() as cur:
@@ -59,6 +63,7 @@ def setup_db(conn):
         conn.commit()
     print("Database table ready.")
 
+
 def save_to_db(conn, df):
     inserted = 0
     with conn.cursor() as cur:
@@ -72,6 +77,7 @@ def save_to_db(conn, df):
                 inserted += 1
         conn.commit()
     print(f"Inserted {inserted} new rows into database.")
+
 
 def main():
     print("Fetching CPU metrics...")
@@ -97,7 +103,7 @@ def main():
 
     df = df.dropna()
     df = df[~df.isin([float('inf'), float('-inf'), float('nan')]).any(axis=1)]
-    
+
     print(f"Fetched {len(df)} rows.")
 
     print("Connecting to PostgreSQL...")
@@ -106,6 +112,7 @@ def main():
     save_to_db(conn, df)
     conn.close()
     print("Done.")
+
 
 if __name__ == "__main__":
     main()

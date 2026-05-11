@@ -4,6 +4,7 @@ from app.services.ml_model import predict_anomaly
 
 router = APIRouter()
 
+
 @router.post("/predict", response_model=PredictionOutput)
 def predict(metric: MetricInput):
     is_anomaly = predict_anomaly(metric.cpu_percent, metric.timestamp)

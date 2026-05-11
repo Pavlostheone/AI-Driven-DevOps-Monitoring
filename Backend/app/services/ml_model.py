@@ -13,6 +13,7 @@ with open(MODEL_PATH, "rb") as f:
 # Rolling window of recent CPU readings (last 12 = ~1 hour at 5min intervals)
 recent_readings = deque(maxlen=12)
 
+
 def predict_anomaly(cpu_percent: float, timestamp: datetime) -> bool:
     recent_readings.append(cpu_percent)
 

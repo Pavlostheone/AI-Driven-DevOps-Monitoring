@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+
 class MetricInput(BaseModel):
     cpu_percent: float
     timestamp: datetime
+
 
 class PredictionOutput(BaseModel):
     timestamp: datetime

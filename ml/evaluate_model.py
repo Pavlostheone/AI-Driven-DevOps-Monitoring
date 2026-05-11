@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import pickle
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
@@ -12,13 +11,21 @@ df = df.sort_values("timestamp").reset_index(drop=True)
 
 # === Feature engineering ===
 df["rolling_mean"] = df["cpu_percent"].rolling(window=12, min_periods=1).mean()
-df["rolling_std"] = df["cpu_percent"].rolling(window=12, min_periods=1).std().fillna(0)
+df["rolling_std"] = df["cpu_percent"].rolling(
+    window=12, min_periods=1).std().fillna(0)
 df["diff"] = df["cpu_percent"].diff().fillna(0)
 df["rolling_max"] = df["cpu_percent"].rolling(window=12, min_periods=1).max()
 df["hour"] = df["timestamp"].dt.hour
 df["day_of_week"] = df["timestamp"].dt.dayofweek
 
-features = ["cpu_percent", "rolling_mean", "rolling_std", "diff", "rolling_max", "hour", "day_of_week"]
+features = [
+    "cpu_percent",
+    "rolling_mean",
+    "rolling_std",
+    "diff",
+    "rolling_max",
+    "hour",
+    "day_of_week"]
 X = df[features]
 y_true = df["anomaly"]
 
@@ -48,7 +55,8 @@ print("\n--- Ground Truth Breakdown ---")
 df["iso_predicted"] = iso_preds
 df["lof_predicted"] = lof_preds
 
-results = df[df["anomaly"] == 1][["timestamp", "cpu_percent", "iso_predicted", "lof_predicted"]]
+results = df[df["anomaly"] == 1][["timestamp",
+                                  "cpu_percent", "iso_predicted", "lof_predicted"]]
 print(results.to_string(index=False))
 
 # === Save best model ===

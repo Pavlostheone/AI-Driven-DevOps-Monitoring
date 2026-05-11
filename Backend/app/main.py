@@ -16,16 +16,20 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", "devops123")
 }
 
+
 def get_db():
     return psycopg2.connect(**DB_CONFIG)
+
 
 @app.get("/")
 def root():
     return {"message": "Backend running"}
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.get("/metrics/history")
 def metrics_history(limit: int = Query(default=50, le=500)):
