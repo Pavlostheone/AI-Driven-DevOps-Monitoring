@@ -11,13 +11,8 @@ kubectl get nodes
 # Verify Helm is installed
 helm version
 
-# Find Helm executable path
-where.exe helm
-
 # Add Prometheus community Helm repo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-
-# Update Helm repos
 helm repo update
 
 # Deploy Prometheus + Grafana stack into monitoring namespace
@@ -37,12 +32,10 @@ kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
 ## Week 1 — Day 2 | Repo Cleanup + README
 
 ```bash
-# Commit legacy scripts and updated README
 git add .
 git commit -m "refactor: move redundant metric scripts to legacy, Prometheus now handles collection"
 git push
 
-# Commit full README
 git add .
 git commit -m "docs: full README reflecting current Kubernetes stack and project structure"
 git push
@@ -55,71 +48,45 @@ git push
 ## Week 1 — Day 3 | Prometheus Queries + Data Exploration
 
 ```bash
-# Forward Prometheus to localhost
 kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-st-prometheus 9090:9090
-
-# Forward Grafana to localhost
 kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
-
-# Commit Prometheus query reference
-git add .
-git commit -m "docs: add Prometheus query reference for CPU, memory and pod metrics"
-git push
 ```
 
 **PromQL queries run:**
 ```promql
-# CPU usage per node
 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
-
-# Memory usage per node
 (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
-
-# Pod count per node
 count by (node) (kube_pod_info)
 ```
 
-**Result:** Cluster producing live metrics. Nodes at ~2% CPU, ~54% memory. Queries saved to `docs/prometheus_queries.md`.
+**Result:** Cluster producing live metrics. Nodes at ~2% CPU, ~54% memory.
 
 ---
 
 ## Week 1 — Day 4 | Python Metric Fetcher + CSV Output
 
 ```bash
-# Install Python dependencies
 pip install requests pandas
-
-# Run metric fetcher (Prometheus port-forward must be running)
 python ml/fetch_metrics.py
 ```
 
-**Result:** 121 rows of real cluster data saved to `ml/cluster_metrics.csv` with timestamp, cpu_percent, memory_percent, pod_count columns.
+**Result:** 121 rows of real cluster data saved to `ml/cluster_metrics.csv`.
 
 ---
 
 ## Week 1 — Day 5 | PostgreSQL Deployment + Full Pipeline
 
 ```bash
-# Add Bitnami Helm repo
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-
-# Deploy PostgreSQL into monitoring namespace
 helm install postgres bitnami/postgresql --namespace monitoring --set auth.postgresPassword=devops123
 
-# Verify PostgreSQL pod is running
 kubectl get pods -n monitoring
-
-# Install Python PostgreSQL driver
 pip install psycopg2-binary
 
-# Start all port-forwards with one command
 bash start.sh
-
-# Run updated metric fetcher (writes to both CSV and PostgreSQL)
 python ml/fetch_metrics.py
 
-# Commit everything
 git add .
 git commit -m "feat: PostgreSQL deployed, metrics pipeline writing to DB, startup script added"
 git push
@@ -130,52 +97,40 @@ git push
 - PostgreSQL → localhost:5432
 - Grafana → http://localhost:3000
 
-**Result:** 35 rows inserted into `cluster_metrics` table in PostgreSQL. Full pipeline working: Prometheus → Python → CSV + PostgreSQL.
+**Result:** 35 rows inserted into `cluster_metrics` table. Full pipeline: Prometheus → Python → CSV + PostgreSQL.
 
 ---
 
 ## Week 2 — Day 1 | CronJob Automation + Docker Hub
 
 ```bash
-# Check data in PostgreSQL
 kubectl exec -it postgres-postgresql-0 -n monitoring -- psql -U postgres
 SELECT COUNT(*) FROM cluster_metrics;
 SELECT * FROM cluster_metrics ORDER BY timestamp DESC LIMIT 5;
 \q
 
-# Build metric fetcher Docker image
 cd ml
 docker build -t metric-fetcher:latest .
 cd ..
 
-# Deploy CronJob into cluster
 kubectl apply -f docker/cronjob.yaml
-
-# Verify CronJob is running
 kubectl get cronjob -n monitoring
-
-# Check CronJob pods
 kubectl get pods -n monitoring | grep metric-fetcher
 
-# Tag and push image to Docker Hub
-docker tag metric-fetcher:latest yourusername/metric-fetcher:latest
-docker push yourusername/metric-fetcher:latest
+docker tag metric-fetcher:latest pavlostheone/metric-fetcher:latest
+docker push pavlostheone/metric-fetcher:latest
 ```
 
-**Result:** CronJob deployed, firing every 5 minutes. Image pushed to Docker Hub to fix ErrImageNeverPull error.
+**Result:** CronJob deployed, firing every 5 minutes. Image pushed to Docker Hub.
 
 ---
 
 ## Week 3 — Day 1 | NAB Dataset + Labeled Anomalies
 
 ```bash
-# Install scikit-learn
 pip install scikit-learn
-
-# Prepare NAB dataset — labels ground truth anomalies
 python ml/prepare_dataset.py
 
-# Commit labeled dataset
 git add ml/nab_labeled.csv ml/prepare_dataset.py .gitignore
 git commit -m "feat: NAB dataset prepared, raw NAB folder excluded from repo"
 git push
@@ -192,33 +147,26 @@ git push
 ## Week 3 — Day 2 | Isolation Forest Training
 
 ```bash
-# Train Isolation Forest model
 python ml/train_model.py
 
-# Commit trained model
 git add ml/train_model.py ml/model.pkl requirements.txt
 git commit -m "feat: Isolation Forest trained, 1/2 ground truth anomalies detected, 0 false positives"
 git push
 ```
 
-**Model config:**
-- `n_estimators`: 100
-- `contamination`: 0.001
-- `random_state`: 42
+**Model config:** n_estimators=100, contamination=0.001, random_state=42
 
 **Features:** cpu_percent, rolling_mean (12pt), rolling_std, rolling_max, diff, hour, day_of_week
 
-**Result:** 1/2 ground truth anomalies caught. Point anomaly (2.344%) detected. Contextual anomaly (0.602%) missed — consistent with known Isolation Forest limitations on contextual anomalies.
+**Result:** 1/2 ground truth anomalies caught. Point anomaly (2.344%) detected. Contextual anomaly (0.602%) missed.
 
 ---
 
 ## Week 3 — Day 3 | Model Evaluation — Isolation Forest vs LOF
 
 ```bash
-# Run model comparison
 python ml/evaluate_model.py
 
-# Commit evaluation script
 git add ml/evaluate_model.py ml/model.pkl
 git commit -m "feat: model evaluation complete, IF and LOF comparison, IF selected as best model"
 git push
@@ -231,24 +179,17 @@ git push
 | Isolation Forest | 4 | 1/2 | 0.25 | 0.50 | 0.33 |
 | Local Outlier Factor | 4 | 1/2 | 0.25 | 0.50 | 0.33 |
 
-**Result:** Both models identical. Isolation Forest selected for API integration due to lower computational complexity and support for online inference. Full findings saved to `docs/report-notes.md`.
+**Result:** Both models identical. Isolation Forest selected for API integration.
 
 ---
 
 ## Week 3 — Day 4 | FastAPI /predict Endpoint
 
 ```bash
-# Install dependencies
 bash setup.sh
 
-# Start backend (from Backend/ directory)
 cd Backend
 uvicorn app.main:app --reload
-
-# Test normal reading
-curl -X POST http://127.0.0.1:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"cpu_percent": 0.13, "timestamp": "2014-02-26T21:50:00"}'
 
 # Prime rolling window then test spike
 curl -s -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{"cpu_percent": 0.13, "timestamp": "2014-02-26T21:40:00"}'
@@ -257,70 +198,56 @@ curl -s -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json
 curl -s -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{"cpu_percent": 0.13, "timestamp": "2014-02-26T21:55:00"}'
 curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{"cpu_percent": 2.344, "timestamp": "2014-02-26T22:05:00"}'
 
-# Commit endpoint
 git add backend/app/services/ml_model.py backend/app/routes/prediction.py backend/app/schemas/metric_schema.py
 git commit -m "feat: /predict endpoint live, rolling window context added, anomaly detection working end-to-end"
 git push
 ```
 
-**Result:** Normal readings return `"anomaly": false`. Spike after primed baseline returns `"anomaly": true, "message": "ANOMALY DETECTED"`. Rolling window of 12 readings replicates training context at inference time.
+**Result:** Normal → `"anomaly": false`. Spike after primed baseline → `"anomaly": true, "message": "ANOMALY DETECTED"`.
 
 ---
 
 ## Week 4 — Day 1 | Dockerise Backend
 
 ```bash
-# Build Docker image
 docker compose -f docker/docker-compose.yml build
-
-# Start containers
 docker compose -f docker/docker-compose.yml up --build
-
-# Verify containers running
 docker compose -f docker/docker-compose.yml ps
 
-# Test predict endpoint inside container (prime first)
+# Prime and test inside container
 curl -s -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{"cpu_percent": 0.13, "timestamp": "2014-02-26T21:40:00"}'
 curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d '{"cpu_percent": 2.344, "timestamp": "2014-02-26T22:05:00"}'
 
-# Stop containers
 docker compose -f docker/docker-compose.yml down
 
-# Commit
 git add Backend/Dockerfile docker/docker-compose.yml Backend/requirements.txt
 git commit -m "feat: backend and postgres containerised, anomaly detection verified inside Docker"
 git push
 ```
 
-**Result:** Backend and PostgreSQL running as Docker containers. Model path resolved via `MODEL_PATH` environment variable — works in Docker, CI, and local environments.
+**Result:** Backend and PostgreSQL running as Docker containers. MODEL_PATH env var resolves correctly in all environments.
 
 ---
 
 ## Week 4 — Day 2 | Multi-container Healthcheck
 
 ```bash
-# Restart with healthcheck config
 docker compose -f docker/docker-compose.yml down
 docker compose -f docker/docker-compose.yml up --build
 
-# Commit
 git add docker/docker-compose.yml
 git commit -m "feat: postgres healthcheck added, backend waits for healthy db before starting"
 git push
 ```
 
-**Result:** PostgreSQL healthcheck runs `pg_isready` every 5 seconds. Backend now starts only after `service_healthy` condition is met — eliminates race condition on startup.
+**Result:** `pg_isready` healthcheck runs every 5s. Backend starts only after `service_healthy` — eliminates race condition.
 
 ---
 
 ## Week 4 — Day 3 | CI/CD Pipeline — GitHub Actions
 
 ```bash
-# Install linting tools
 pip install flake8 autopep8
-
-# Run linter locally
-flake8 Backend/app/ ml/ --max-line-length=120 --exclude=__pycache__,ml/NAB --ignore=E501,W503
 
 # Auto-fix formatting
 autopep8 --in-place --aggressive Backend/app/main.py
@@ -335,17 +262,74 @@ autopep8 --in-place --aggressive ml/train_model.py
 # Verify clean
 flake8 Backend/app/ ml/ --max-line-length=120 --exclude=__pycache__,ml/NAB --ignore=E501,W503
 
-# Commit pipeline
 git add .github/workflows/ci-cd.yml
 git commit -m "feat: GitHub Actions CI/CD pipeline added, all lint errors fixed"
 git push
 ```
 
-**Pipeline jobs (`.github/workflows/ci-cd.yml`):**
+**Pipeline jobs:**
 1. **Lint Python** — flake8 on Backend/app/ and ml/
 2. **Build Docker Image** — builds backend image via docker compose
 3. **Test Predict Endpoint** — trains model, starts backend, primes window, asserts normal=false and spike=true
 
-**Result:** All three jobs green. Pipeline triggers on every push to main. Anomaly detection verified automatically in CI on each commit.
+**Result:** All three jobs green. Pipeline triggers on every push to main.
+
+---
+
+## Phase 5 | Anomaly Detector + /anomalies Endpoint
+
+```bash
+pip install requests
+
+# Create anomaly_results table in PostgreSQL
+kubectl exec -it postgres-postgresql-0 -n monitoring -- psql -U postgres -c "
+CREATE TABLE IF NOT EXISTS anomaly_results (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMPTZ NOT NULL,
+    cpu_percent FLOAT NOT NULL,
+    anomaly BOOLEAN NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);"
+
+# Run anomaly detector
+python ml/anomaly_detector.py
+
+# Verify data in database
+kubectl exec -it postgres-postgresql-0 -n monitoring -- psql -U postgres -c "SELECT * FROM anomaly_results ORDER BY created_at DESC LIMIT 10;"
+
+# Stop Docker Compose backend (causes ghost process on port 8000)
+docker compose -f docker/docker-compose.yml down
+
+# Test /anomalies endpoint
+curl http://localhost:8000/anomalies
+curl "http://localhost:8000/anomalies?only_anomalies=true"
+
+# Rebuild Docker image with updated backend
+docker compose -f docker/docker-compose.yml build
+
+git add ml/anomaly_detector.py Backend/app/routes/anomalies.py Backend/app/main.py Backend/requirements.txt start.sh database/init.sql
+git commit -m "feat: Phase 5 complete - anomaly detector polling Prometheus, results stored in PostgreSQL, /anomalies endpoint added"
+git push
+```
+
+**Anomaly detector flow:**
+```
+Prometheus (live CPU metrics)
+        ↓
+ml/anomaly_detector.py  (polls every 30s)
+        ↓
+FastAPI /predict  (Isolation Forest inference)
+        ↓
+PostgreSQL anomaly_results table
+        ↓
+GET /anomalies  (query results via API)
+```
+
+**Notable observation:** Docker restart captured in real time — CPU spike from 77% → 67% → 57% → 47% → 37% → 28% → 18% → 7% → 2.6% all correctly flagged as anomalies as the cluster recovered.
+
+**Important:** Always run `docker compose -f docker/docker-compose.yml down` before `bash start.sh` to prevent ghost processes competing on port 8000.
+
+**Result:** Full end-to-end pipeline working. Live cluster metrics flowing into AI model, results persisted and queryable via REST API.
 
 ---
