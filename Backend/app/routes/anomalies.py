@@ -1,14 +1,8 @@
-from fastapi import FastAPI, Query
+from fastapi import APIRouter, Query
 import psycopg2
 import os
-from app.routes.prediction import router as prediction_router
 
-app = FastAPI(title="DevOps AI Monitor")
-app.include_router(prediction_router)
-
-
-
-
+router = APIRouter()
 
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
@@ -19,22 +13,9 @@ DB_CONFIG = {
 }
 
 
-def get_db():
-    return psycopg2.connect(**DB_CONFIG)
-
-
-@app.get("/")
-def root():
-    return {"message": "Backend running"}
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-@app.get("/anomalies")
+@router.get("/anomalies")
 def get_anomalies(limit: int = Query(default=50, le=500), only_anomalies: bool = False):
-    conn = get_db()
+    conn = psycopg2.connect(**DB_CONFIG)
     with conn.cursor() as cur:
         if only_anomalies:
             cur.execute("""
@@ -53,6 +34,7 @@ def get_anomalies(limit: int = Query(default=50, le=500), only_anomalies: bool =
             """, (limit,))
         rows = cur.fetchall()
     conn.close()
+
     return [
         {
             "timestamp": str(row[0]),
@@ -60,29 +42,6 @@ def get_anomalies(limit: int = Query(default=50, le=500), only_anomalies: bool =
             "anomaly": row[2],
             "message": row[3],
             "created_at": str(row[4])
-        }
-        for row in rows
-    ]
-
-@app.get("/metrics/history")
-def metrics_history(limit: int = Query(default=50, le=500)):
-    conn = get_db()
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT timestamp, cpu_percent, memory_percent, pod_count
-            FROM cluster_metrics
-            ORDER BY timestamp DESC
-            LIMIT %s
-        """, (limit,))
-        rows = cur.fetchall()
-    conn.close()
-
-    return [
-        {
-            "timestamp": str(row[0]),
-            "cpu_percent": row[1],
-            "memory_percent": row[2],
-            "pod_count": row[3]
         }
         for row in rows
     ]
